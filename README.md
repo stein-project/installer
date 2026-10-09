@@ -58,7 +58,7 @@ timestamps, so the same Java gives the same zip and players do not download it a
 
 ## Licence
 
-Mozilla Public License 2.0, see [LICENSE](LICENSE). Third-party software and its licences are in [NOTICE](NOTICE). The
-Stein name and logo are trademarks: see [TRADEMARK.md](TRADEMARK.md).
+Proprietary software, all rights reserved: see [LICENSE](LICENSE). Third-party software and its licences are in
+[NOTICE](NOTICE). The Stein name and logo are trademarks: see the [trademark policy](https://github.com/Stein-Project/.github/blob/main/TRADEMARK.md).
 
 Created by Breno Xavier.

@@ -1,9 +1,6 @@
 /*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- *
- * Copyright (c) 2026 Breno Xavier
+ * Copyright (c) 2026 Breno Xavier. All rights reserved.
+ * Proprietary software: see the LICENSE file at the root of this repository.
  */
 
 package dev.xavier.stein.installer;
@@ -65,9 +62,9 @@ public final class Install {
      * Library versions: those of SteinBridge.VERSION and Loader.VERSION (the build,
      * build.gradle.kts, checks).
      */
-    public static final String BRIDGE_VERSION = "0.1.19";
+    public static final String BRIDGE_VERSION = "0.1.20";
 
-    public static final String LOADER_VERSION = "0.1.23";
+    public static final String LOADER_VERSION = "0.1.24";
 
     /** Folder and version id in the launcher, in LiteLoader style (1.8.9-LiteLoader1.8.9). */
     public static final String VERSION_ID = "1.8.9-SteinLoader";
