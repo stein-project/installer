@@ -1,0 +1,27 @@
+Stein Installer
+Copyright (c) 2026 Breno Xavier (https://github.com/brenoxavier)
+
+Part of Stein (https://github.com/Stein-Project). Licensed under the Mozilla Public License 2.0 (see LICENSE).
+
+The Stein name and logo are trademarks of Breno Xavier and are not covered by the licence.
+See TRADEMARK.md for what is allowed.
+
+NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
+Minecraft is a trademark of Mojang AB. No Minecraft code or assets are distributed by this project:
+the game is patched at runtime, on the player's machine, from the player's own copy.
+
+-------------------------------------------------------------------------------
+Third-party software shipped with the installer
+-------------------------------------------------------------------------------
+Stein Bridge and Stein Loader (https://github.com/Stein-Project) - in the installer payload
+  Copyright (c) 2026 Breno Xavier. Mozilla Public License 2.0 (the Loader API: MIT).
+
+Amazon Corretto 25 (https://aws.amazon.com/corretto) - the Java runtime in runtime-*.zip and in the Windows app
+  GNU General Public License v2 with the Classpath Exception. The runtime is a jlink image of the unmodified
+  Corretto build pinned in gradle/runtimes.properties; its source is at https://github.com/corretto/corretto-25
+
+LWJGL 3 (https://www.lwjgl.org)
+  Copyright (c) 2012-present Lightweight Java Game Library. BSD 3-Clause License.
+
+ASM (https://asm.ow2.io)
+  Copyright (c) 2000-2011 INRIA, France Telecom. BSD 3-Clause License.

@@ -1,0 +1,7 @@
+# Every library and plugin version of the build, in one place. Gradle checks each download against the sha256 in
+# gradle/verification-metadata.xml; the Java runtimes the installer ships are pinned in gradle/runtimes.properties.
+[versions]
+google-java-format = "1.36.1"
+
+[plugins]
+spotless = { id = "com.diffplug.spotless", version = "8.10.4" }

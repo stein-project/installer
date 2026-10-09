@@ -1,0 +1,41 @@
+# Builds the installer (every system's runtime included) from the Bridge and the Loader, and checks the formatting.
+# Minecraft 1.8.9 comes from Mojang's CDN (./gradlew fetchMinecraft in the Bridge, sha1-checked) and is never published.
+name: build
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: installer
+      # The installer ships the Bridge and the Loader built from source, next to this repository.
+      - uses: actions/checkout@v4
+        with:
+          repository: Stein-Project/bridge
+          path: bridge
+      - uses: actions/checkout@v4
+        with:
+          repository: Stein-Project/loader
+          path: loader
+      - uses: actions/checkout@v4
+        with:
+          repository: Stein-Project/sdk
+          path: sdk
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      # Also checks that gradle-wrapper.jar is the official one.
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Minecraft 1.8.9
+        working-directory: bridge
+        run: ./gradlew fetchMinecraft
+      - name: Build and check
+        working-directory: installer
+        run: ./gradlew build -Pstein.mcDir=${{ github.workspace }}/bridge/build/mc
