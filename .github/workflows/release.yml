@@ -1,0 +1,85 @@
+# Publishes an installer release when a v<version> tag is pushed; the tag must match Install.VERSION, and the notes
+# come from the Loader's changelog/<version>.en_US.md and pt_BR.md. Built on Windows so that the app for people
+# without Java (jpackage) goes with it. Run by hand (Actions > release > Run workflow) it only builds and keeps the
+# files as a workflow artifact, publishing nothing.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: installer
+      # The installer ships the Bridge and the Loader built from source, next to this repository.
+      - uses: actions/checkout@v4
+        with:
+          repository: Stein-Project/bridge
+          path: bridge
+          ssh-key: ${{ secrets.BRIDGE_DEPLOY_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          repository: Stein-Project/loader
+          path: loader
+          ssh-key: ${{ secrets.LOADER_DEPLOY_KEY }}
+      - uses: actions/checkout@v4
+        with:
+          repository: Stein-Project/sdk
+          path: sdk
+          ssh-key: ${{ secrets.SDK_DEPLOY_KEY }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Version
+        id: version
+        working-directory: installer
+        run: |
+          v=$(sed -n 's/.*String VERSION = "\([^"]*\)".*/\1/p' src/main/java/dev/xavier/stein/installer/Install.java)
+          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "v$v" ]]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match Install.VERSION $v"; exit 1
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - name: Minecraft 1.8.9
+        working-directory: bridge
+        run: ./gradlew fetchMinecraft
+      - name: Build and check
+        working-directory: installer
+        run: ./gradlew build -Pstein.mcDir="$GITHUB_WORKSPACE/bridge/build/mc"
+      - name: Files
+        run: |
+          mkdir dist
+          cp installer/build/installer/*.jar installer/build/installer/*.zip dist/
+          (cd dist && sha256sum * > SHA256SUMS)
+          for lang in en_US pt_BR; do
+            f=loader/changelog/${{ steps.version.outputs.version }}.$lang.md
+            if [[ -f $f ]]; then cat "$f" >> notes.md; echo >> notes.md; fi
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stein-installer-${{ steps.version.outputs.version }}
+          path: |
+            dist/
+            notes.md
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pre=; [[ "$GITHUB_REF_NAME" == *-* ]] && pre=--prerelease
+          notes=(--generate-notes); [[ -s notes.md ]] && notes=(--notes-file notes.md)
+          gh release create "$GITHUB_REF_NAME" dist/* -R "$GITHUB_REPOSITORY" $pre \
+            --title "Stein Loader ${{ steps.version.outputs.version }}" "${notes[@]}"
