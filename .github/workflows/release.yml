@@ -16,20 +16,15 @@
 #      runtime-*.zip and SHA256SUMS.txt (the Stein Client checks the installer and the runtimes against it);
 #   3. stein.json on the main branch of that repository: "latest" (version and url) for a stable release, "test.loader"
 #      for a test one. The mods index ("mods"), "discord" and "news" are kept as they are;
-#   4. transition mirror: while the repository variable MIRROR_OWNER is set (x4vieer), the same release and the same
-#      stein.json change also go to <MIRROR_OWNER>/stein-loader, which the Loaders and Stein Clients already installed
-#      still read. "latest.url" points to the organisation in both. Empty MIRROR_OWNER turns the mirror off;
-#   5. Discord (stable only): the notes in #changelog and the single downloads message rewritten. Optional: without
+#   4. Discord (stable only): the notes in #changelog and the single downloads message rewritten. Optional: without
 #      the DISCORD_BOT_TOKEN secret or the channel variables it is skipped.
 # Every step is idempotent: running the same tag again publishes nothing twice.
 #
 # Settings of this repository (see LEIA-ME.md of the local stein-project folder):
 #   secrets    BRIDGE_DEPLOY_KEY, LOADER_DEPLOY_KEY, SDK_DEPLOY_KEY   read the private sibling repositories
 #              DIST_TOKEN          fine-grained PAT with Contents: read and write on Stein-Project/stein-loader
-#              MIRROR_TOKEN        PAT of the mirror account with Contents: read and write on <MIRROR_OWNER>/stein-loader
 #              DISCORD_BOT_TOKEN   optional
-#   variables  MIRROR_OWNER        x4vieer during the transition; empty or unset = no mirror
-#              DIST_OWNER          optional, default Stein-Project
+#   variables  DIST_OWNER          optional, default Stein-Project
 #              DISCORD_CANAL_DOWNLOADS, DISCORD_CANAL_CHANGELOG   optional
 name: release
 
@@ -52,7 +47,6 @@ jobs:
     timeout-minutes: 90
     env:
       DIST_OWNER: ${{ vars.DIST_OWNER || 'Stein-Project' }}
-      MIRROR_OWNER: ${{ vars.MIRROR_OWNER }}
       ENSAIO: ${{ github.event_name != 'push' }}
     steps:
       - uses: actions/checkout@v4
@@ -205,7 +199,7 @@ jobs:
             - Stein Bridge: **${{ steps.version.outputs.bridge }}**
             - Stein Loader: **${{ steps.version.outputs.loader }}**
         run: |
-          echo "release v$VERSION -> $DIST_OWNER/stein-loader${MIRROR_OWNER:+ and the mirror $MIRROR_OWNER/stein-loader}:"
+          echo "release v$VERSION -> $DIST_OWNER/stein-loader:"
           ls dist
           echo "stein.json: latest = {version: $VERSION, url: https://github.com/$DIST_OWNER/stein-loader/releases/latest}"
           export PRINT=1 ROTULO="Stein Loader" VERSAO="$VERSION" NOTAS="loader/changelog/$VERSION.pt_BR.md" \
@@ -222,15 +216,6 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
           TESTE: ${{ steps.version.outputs.teste }}
         run: bash installer/.github/scripts/publish-loader.sh "$DIST_OWNER/stein-loader" DIST_TOKEN
-
-      - name: Mirror (${{ env.MIRROR_OWNER }}/stein-loader)
-        if: env.ENSAIO != 'true' && env.MIRROR_OWNER != ''
-        env:
-          GH_TOKEN: ${{ secrets.MIRROR_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
-          TAG: ${{ steps.version.outputs.tag }}
-          TESTE: ${{ steps.version.outputs.teste }}
-        run: bash installer/.github/scripts/publish-loader.sh "$MIRROR_OWNER/stein-loader" MIRROR_TOKEN
 
       - name: Discord
         if: env.ENSAIO != 'true' && steps.version.outputs.teste == ''
