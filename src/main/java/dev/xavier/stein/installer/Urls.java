@@ -16,7 +16,7 @@ final class Urls {
     static final String INDEX =
             System.getProperty(
                     "steinloader.index",
-                    "https://raw.githubusercontent.com/x4vieer/stein-loader/main/stein.json");
+                    "https://raw.githubusercontent.com/Stein-Project/stein-loader/main/stein.json");
 
     /**
      * Base of the release downloads that hold the Java runtimes ({@code
@@ -25,7 +25,7 @@ final class Urls {
     static final String RUNTIME_BASE =
             System.getProperty(
                     "steinloader.runtimes",
-                    "https://github.com/x4vieer/stein-loader/releases/download/");
+                    "https://github.com/Stein-Project/stein-loader/releases/download/");
 
     /** Maven Central, the source of the LWJGL libraries declared in the version JSON. */
     static final String MAVEN = "https://repo1.maven.org/maven2/";

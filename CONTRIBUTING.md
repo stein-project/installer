@@ -30,3 +30,24 @@ the profile: the official launcher and an older one.
   that comes from the same place as the file.
 - **The Java runtime is pinned** in `gradle/runtimes.properties` (version, URL and sha256 for all four systems).
   Change all four together.
+
+## Releases
+
+The installer's release is the pack players download. Write `changelog/<version>.en_US.md` and `.pt_BR.md` in the
+[loader](https://github.com/Stein-Project/loader) repository, then push a `v<Install.VERSION>` tag here
+(`v<version>-rc.1` for a test version, seen only by the Stein Client's test channel). `.github/workflows/release.yml`
+builds the installer with the obfuscated Bridge and Loader and publishes it to the public distribution repository
+[Stein-Project/stein-loader](https://github.com/Stein-Project/stein-loader): the release (installer, runtimes,
+`SHA256SUMS.txt`) and `latest` in its `stein.json`, plus the Discord announcement. While the repository variable
+`MIRROR_OWNER` is set, the same goes to the old `x4vieer/stein-loader`, which installed Loaders and Stein Clients
+still read. Running it by hand is a dry run that publishes nothing. The installer reads `stein.json` (the mods index)
+and the runtimes from that repository (`Urls.java`).
+
+## The obfuscated payload
+
+`./gradlew build` builds the installer with the **obfuscated** Bridge and Loader (`../bridge` and `../loader`
+`./gradlew dist`) and the patcher rules translated to their names (`../bridge/build/dist/rules`): that is what
+players get and what every release ships. `-Pstein.dist=false` builds it with the plain jars and commented rules, for
+a quicker local test only; the payload task says which one it built. Nothing of `build/dist-mapping` goes into the
+payload (the build checks it). A player's stack trace is retraced with the mapping of the Loader build that went into
+that release (`../loader/build/dist-mapping/steinloader.txt`, see the Loader's CONTRIBUTING).

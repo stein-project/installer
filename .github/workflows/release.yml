@@ -1,7 +1,36 @@
-# Publishes an installer release when a v<version> tag is pushed; the tag must match Install.VERSION, and the notes
-# come from the Loader's changelog/<version>.en_US.md and pt_BR.md. Built on Windows so that the app for people
-# without Java (jpackage) goes with it. Run by hand (Actions > release > Run workflow) it only builds and keeps the
-# files as a workflow artifact, publishing nothing.
+# The player-facing pack release: the installer (with the Bridge and the Loader inside, built from source) and the Java
+# runtimes, published to the public distribution repository Stein-Project/stein-loader.
+#
+#   git tag v0.1.30 && git push origin v0.1.30            stable: the tag must be v<Install.VERSION>
+#   git tag v0.1.30-rc.1 && git push origin v0.1.30-rc.1  test version: a pre-release that only the Stein Client's
+#                                                         test channel sees (the "test" block of stein.json), no Discord
+#
+# Run by hand (Actions > release > Run workflow) it is a dry run (ensaio): it builds, checks the changelog, keeps the
+# files as a workflow artifact and prints the release notes, the stein.json change and the Discord messages it would
+# send, publishing nothing.
+#
+# On a tag:
+#   1. the changelog is required before anything is built: loader/changelog/<version>.en_US.md and .pt_BR.md (the
+#      pack's notes live in the Loader repository; en_US goes on the release, pt_BR on Discord);
+#   2. release v<version> on Stein-Project/stein-loader: SteinLoader-Installer.jar, SteinLoader-Installer-windows.zip,
+#      runtime-*.zip and SHA256SUMS.txt (the Stein Client checks the installer and the runtimes against it);
+#   3. stein.json on the main branch of that repository: "latest" (version and url) for a stable release, "test.loader"
+#      for a test one. The mods index ("mods"), "discord" and "news" are kept as they are;
+#   4. transition mirror: while the repository variable MIRROR_OWNER is set (x4vieer), the same release and the same
+#      stein.json change also go to <MIRROR_OWNER>/stein-loader, which the Loaders and Stein Clients already installed
+#      still read. "latest.url" points to the organisation in both. Empty MIRROR_OWNER turns the mirror off;
+#   5. Discord (stable only): the notes in #changelog and the single downloads message rewritten. Optional: without
+#      the DISCORD_BOT_TOKEN secret or the channel variables it is skipped.
+# Every step is idempotent: running the same tag again publishes nothing twice.
+#
+# Settings of this repository (see LEIA-ME.md of the local stein-project folder):
+#   secrets    BRIDGE_DEPLOY_KEY, LOADER_DEPLOY_KEY, SDK_DEPLOY_KEY   read the private sibling repositories
+#              DIST_TOKEN          fine-grained PAT with Contents: read and write on Stein-Project/stein-loader
+#              MIRROR_TOKEN        PAT of the mirror account with Contents: read and write on <MIRROR_OWNER>/stein-loader
+#              DISCORD_BOT_TOKEN   optional
+#   variables  MIRROR_OWNER        x4vieer during the transition; empty or unset = no mirror
+#              DIST_OWNER          optional, default Stein-Project
+#              DISCORD_CANAL_DOWNLOADS, DISCORD_CANAL_CHANGELOG   optional
 name: release
 
 on:
@@ -10,7 +39,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 defaults:
   run:
@@ -18,7 +47,13 @@ defaults:
 
 jobs:
   release:
+    # Windows because the app for people without Java (jpackage) is built on the system it is for.
     runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      DIST_OWNER: ${{ vars.DIST_OWNER || 'Stein-Project' }}
+      MIRROR_OWNER: ${{ vars.MIRROR_OWNER }}
+      ENSAIO: ${{ github.event_name != 'push' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,47 +74,181 @@ jobs:
           repository: Stein-Project/sdk
           path: sdk
           ssh-key: ${{ secrets.SDK_DEPLOY_KEY }}
+
+      # First on purpose: a release without its notes stops in seconds, not after the build.
+      - name: Version and changelog
+        id: version
+        run: |
+          src=installer/src/main/java/dev/xavier/stein/installer/Install.java
+          const() { sed -n "s/.*String $1 = \"\([^\"]*\)\".*/\1/p" "$src" | head -1; }
+          v="$(const VERSION)"
+          teste=
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            case "$GITHUB_REF_NAME" in
+              "v$v") ;;
+              "v$v"-*) teste="${GITHUB_REF_NAME#"v$v"-}" ;;
+              *) echo "::error::tag $GITHUB_REF_NAME does not match Install.VERSION $v (v$v or v$v-<label>)"; exit 1 ;;
+            esac
+            [[ -z "$teste" || "$teste" =~ ^[A-Za-z0-9.]+$ ]] || { echo "::error::invalid test label: $teste"; exit 1; }
+          fi
+          bash installer/.github/scripts/changelog.sh check loader/changelog "$v"
+          {
+            echo "version=$v"
+            echo "tag=v$v${teste:+-$teste}"
+            echo "teste=$teste"
+            echo "bridge=$(const BRIDGE_VERSION)"
+            echo "loader=$(const LOADER_VERSION)"
+          } >> "$GITHUB_OUTPUT"
+          echo "Stein Loader $v${teste:+ (test: $teste)}, Bridge $(const BRIDGE_VERSION), Loader $(const LOADER_VERSION)"
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Version
-        id: version
-        working-directory: installer
-        run: |
-          v=$(sed -n 's/.*String VERSION = "\([^"]*\)".*/\1/p' src/main/java/dev/xavier/stein/installer/Install.java)
-          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "v$v" ]]; then
-            echo "::error::tag $GITHUB_REF_NAME does not match Install.VERSION $v"; exit 1
-          fi
-          echo "version=$v" >> "$GITHUB_OUTPUT"
       - name: Minecraft 1.8.9
         working-directory: bridge
         run: ./gradlew fetchMinecraft
+      # The player-facing build bundles the obfuscated Bridge and Loader.
+      # -Pstein.dist=true: the payload carries the obfuscated Bridge and Loader with the translated patcher rules (it is
+      # also the default; stated here so a release never depends on it). The log says "payload: obfuscated Bridge and
+      # Loader, translated rules".
       - name: Build and check
         working-directory: installer
-        run: ./gradlew build -Pstein.mcDir="$GITHUB_WORKSPACE/bridge/build/mc"
-      - name: Files
+        run: ./gradlew build -Pstein.mcDir="$GITHUB_WORKSPACE/bridge/build/mc" -Pstein.dist=true
+
+      - name: Files and notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          BRIDGE: ${{ steps.version.outputs.bridge }}
+          LOADER: ${{ steps.version.outputs.loader }}
         run: |
           mkdir dist
-          cp installer/build/installer/*.jar installer/build/installer/*.zip dist/
-          (cd dist && sha256sum * > SHA256SUMS)
-          for lang in en_US pt_BR; do
-            f=loader/changelog/${{ steps.version.outputs.version }}.$lang.md
-            if [[ -f $f ]]; then cat "$f" >> notes.md; echo >> notes.md; fi
+          cp installer/build/installer/SteinLoader-Installer.jar installer/build/installer/SteinLoader-Installer-windows.zip \
+             installer/build/installer/runtime-*.zip dist/
+          # Nothing from Mojang: the installer patches the player's own 1.8.9.jar, and no derived copy travels.
+          for f in dist/*.jar dist/*.zip; do
+            if jar tf "$f" | grep -qE '1\.8\.9|minecraft'; then echo "::error::$f has game files inside"; exit 1; fi
           done
-      - uses: actions/upload-artifact@v4
+          # SHA256SUMS.txt, with this name: the Stein Client reads it from the release (core/src/stein.rs).
+          (cd dist && sha256sum -- *.jar *.zip > SHA256SUMS.txt)
+          ch=loader/changelog/$VERSION.en_US.md
+          cl() { bash installer/.github/scripts/changelog.sh "$1" "$ch"; }
+          sum_of() { grep -E " \*?$1\$" dist/SHA256SUMS.txt | cut -d' ' -f1; }
+          {
+            echo "## $(cl title)"
+            echo
+            cl summary
+            echo
+            cl body
+            echo
+            echo "| component | version |"
+            echo "| --- | --- |"
+            echo "| Installer | $VERSION |"
+            echo "| Stein Bridge | $BRIDGE |"
+            echo "| Stein Loader | $LOADER |"
+            echo
+            echo "**Install:** double-click \`SteinLoader-Installer.jar\` (or \`java -jar SteinLoader-Installer.jar\`) with"
+            echo "Java 8 or newer, on **Windows, Linux or macOS** — the same file. It downloads the Java 25 the game runs"
+            echo "on (the \`runtime-*.zip\` here, one per system) before touching anything else. On Windows with no Java at"
+            echo "all, take \`SteinLoader-Installer-windows.zip\`, unzip it and run the \`.exe\` inside. Play Minecraft 1.8.9"
+            echo "once in the launcher first, then pick the profile **Stein Loader 1.8.9**. Already installed? The button"
+            echo "says Update and keeps your earlier choices."
+            echo
+            echo "**Mods:** the installer downloads and updates the official mods you pick; each one also has its own page."
+            echo
+            echo "Nothing from Mojang is inside these files: the installer patches the \`1.8.9.jar\` already on your machine."
+            echo
+            echo "**SHA-256**"
+            for f in dist/*.jar dist/*.zip; do
+              n="$(basename "$f")"; echo "\`$n\` \`$(sum_of "$n")\`"
+            done
+          } > notes.md
+          ls -la dist
+          echo "::group::release notes"; cat notes.md; echo "::endgroup::"
+
+      # Only in the dry run: a release already holds its files, and storing 250 MB on every release ran out of the
+      # artifact quota once (stein-master).
+      - name: Keep the files (dry run)
+        if: env.ENSAIO == 'true'
+        uses: actions/upload-artifact@v4
         with:
           name: stein-installer-${{ steps.version.outputs.version }}
           path: |
             dist/
             notes.md
-      - name: Publish
-        if: startsWith(github.ref, 'refs/tags/')
+          retention-days: 14
+
+      # The obfuscation mapping (the table that turns a player's log back into names) never goes to a release, but
+      # without it a report from a player is unreadable.
+      - name: Keep the obfuscation mapping (private)
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapping-${{ steps.version.outputs.tag }}-${{ github.run_id }}
+          path: |
+            bridge/build/dist-mapping/
+            loader/build/dist-mapping/
+            installer/build/dist-mapping/
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: What it would publish (dry run)
+        if: env.ENSAIO == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          BRIDGE: ${{ steps.version.outputs.bridge }}
+          LOADER: ${{ steps.version.outputs.loader }}
+          VERSOES: |-
+            - Instalador: **${{ steps.version.outputs.version }}**
+            - Stein Bridge: **${{ steps.version.outputs.bridge }}**
+            - Stein Loader: **${{ steps.version.outputs.loader }}**
         run: |
-          pre=; [[ "$GITHUB_REF_NAME" == *-* ]] && pre=--prerelease
-          notes=(--generate-notes); [[ -s notes.md ]] && notes=(--notes-file notes.md)
-          gh release create "$GITHUB_REF_NAME" dist/* -R "$GITHUB_REPOSITORY" $pre \
-            --title "Stein Loader ${{ steps.version.outputs.version }}" "${notes[@]}"
+          echo "release v$VERSION -> $DIST_OWNER/stein-loader${MIRROR_OWNER:+ and the mirror $MIRROR_OWNER/stein-loader}:"
+          ls dist
+          echo "stein.json: latest = {version: $VERSION, url: https://github.com/$DIST_OWNER/stein-loader/releases/latest}"
+          export PRINT=1 ROTULO="Stein Loader" VERSAO="$VERSION" NOTAS="loader/changelog/$VERSION.pt_BR.md" \
+                 URL="https://github.com/$DIST_OWNER/stein-loader/releases/tag/v$VERSION"
+          bash installer/.github/scripts/discord.sh changelog
+          bash installer/.github/scripts/discord.sh downloads || true
+          echo "(dry run: nothing was published)"
+
+      - name: Publish (${{ env.DIST_OWNER }}/stein-loader)
+        if: env.ENSAIO != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.DIST_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          TESTE: ${{ steps.version.outputs.teste }}
+        run: bash installer/.github/scripts/publish-loader.sh "$DIST_OWNER/stein-loader" DIST_TOKEN
+
+      - name: Mirror (${{ env.MIRROR_OWNER }}/stein-loader)
+        if: env.ENSAIO != 'true' && env.MIRROR_OWNER != ''
+        env:
+          GH_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TAG: ${{ steps.version.outputs.tag }}
+          TESTE: ${{ steps.version.outputs.teste }}
+        run: bash installer/.github/scripts/publish-loader.sh "$MIRROR_OWNER/stein-loader" MIRROR_TOKEN
+
+      - name: Discord
+        if: env.ENSAIO != 'true' && steps.version.outputs.teste == ''
+        env:
+          GH_TOKEN: ${{ secrets.DIST_TOKEN }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CANAL_DOWNLOADS: ${{ vars.DISCORD_CANAL_DOWNLOADS }}
+          DISCORD_CANAL_CHANGELOG: ${{ vars.DISCORD_CANAL_CHANGELOG }}
+          VERSION: ${{ steps.version.outputs.version }}
+          BRIDGE: ${{ steps.version.outputs.bridge }}
+          LOADER: ${{ steps.version.outputs.loader }}
+          VERSOES: |-
+            - Instalador: **${{ steps.version.outputs.version }}**
+            - Stein Bridge: **${{ steps.version.outputs.bridge }}**
+            - Stein Loader: **${{ steps.version.outputs.loader }}**
+        run: |
+          export ROTULO="Stein Loader" VERSAO="$VERSION" NOTAS="loader/changelog/$VERSION.pt_BR.md" \
+                 URL="https://github.com/$DIST_OWNER/stein-loader/releases/tag/v$VERSION"
+          bash installer/.github/scripts/discord.sh changelog
+          # One message about every component, rewritten after everything is published.
+          bash installer/.github/scripts/discord.sh downloads
