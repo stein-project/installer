@@ -38,7 +38,7 @@ The installer's release is the pack players download. Write `changelog/<version>
 (`v<version>-rc.1` for a test version, seen only by the Stein Client's test channel). `.github/workflows/release.yml`
 builds the installer with the obfuscated Bridge and Loader and publishes it to the public distribution repository
 [Stein-Project/stein-loader](https://github.com/Stein-Project/stein-loader): the release (installer, runtimes,
-`SHA256SUMS.txt`) and `latest` in its `stein.json`, plus the Discord announcement. The old `x4vieer/stein-loader` is
+`SHA256SUMS.txt`) and `latest` in its `stein.json`. The old `x4vieer/stein-loader` is
 frozen and gets nothing from here. Running it by hand is a dry run that publishes nothing. The installer reads `stein.json` (the mods index)
 and the runtimes from that repository (`Urls.java`).
 

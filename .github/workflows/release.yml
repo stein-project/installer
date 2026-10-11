@@ -3,29 +3,24 @@
 #
 #   git tag v0.1.30 && git push origin v0.1.30            stable: the tag must be v<Install.VERSION>
 #   git tag v0.1.30-rc.1 && git push origin v0.1.30-rc.1  test version: a pre-release that only the Stein Client's
-#                                                         test channel sees (the "test" block of stein.json), no Discord
+#                                                         test channel sees (the "test" block of stein.json)
 #
 # Run by hand (Actions > release > Run workflow) it is a dry run (ensaio): it builds, checks the changelog, keeps the
-# files as a workflow artifact and prints the release notes, the stein.json change and the Discord messages it would
-# send, publishing nothing.
+# files as a workflow artifact and prints the release notes and the stein.json change, publishing nothing.
 #
 # On a tag:
 #   1. the changelog is required before anything is built: loader/changelog/<version>.en_US.md and .pt_BR.md (the
-#      pack's notes live in the Loader repository; en_US goes on the release, pt_BR on Discord);
+#      pack's notes live in the Loader repository; en_US goes on the release);
 #   2. release v<version> on Stein-Project/stein-loader: SteinLoader-Installer.jar, SteinLoader-Installer-windows.zip,
 #      runtime-*.zip and SHA256SUMS.txt (the Stein Client checks the installer and the runtimes against it);
 #   3. stein.json on the main branch of that repository: "latest" (version and url) for a stable release, "test.loader"
-#      for a test one. The mods index ("mods"), "discord" and "news" are kept as they are;
-#   4. Discord (stable only): the notes in #changelog and the single downloads message rewritten. Optional: without
-#      the DISCORD_BOT_TOKEN secret or the channel variables it is skipped.
+#      for a test one. The mods index ("mods"), "discord" and "news" are kept as they are.
 # Every step is idempotent: running the same tag again publishes nothing twice.
 #
 # Settings of this repository (see LEIA-ME.md of the local stein-project folder):
 #   secrets    BRIDGE_DEPLOY_KEY, LOADER_DEPLOY_KEY, SDK_DEPLOY_KEY   read the private sibling repositories
 #              DIST_TOKEN          fine-grained PAT with Contents: read and write on Stein-Project/stein-loader
-#              DISCORD_BOT_TOKEN   optional
 #   variables  DIST_OWNER          optional, default Stein-Project
-#              DISCORD_CANAL_DOWNLOADS, DISCORD_CANAL_CHANGELOG   optional
 name: release
 
 on:
@@ -192,20 +187,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
-          BRIDGE: ${{ steps.version.outputs.bridge }}
-          LOADER: ${{ steps.version.outputs.loader }}
-          VERSOES: |-
-            - Instalador: **${{ steps.version.outputs.version }}**
-            - Stein Bridge: **${{ steps.version.outputs.bridge }}**
-            - Stein Loader: **${{ steps.version.outputs.loader }}**
         run: |
           echo "release v$VERSION -> $DIST_OWNER/stein-loader:"
           ls dist
           echo "stein.json: latest = {version: $VERSION, url: https://github.com/$DIST_OWNER/stein-loader/releases/latest}"
-          export PRINT=1 ROTULO="Stein Loader" VERSAO="$VERSION" NOTAS="loader/changelog/$VERSION.pt_BR.md" \
-                 URL="https://github.com/$DIST_OWNER/stein-loader/releases/tag/v$VERSION"
-          bash installer/.github/scripts/discord.sh changelog
-          bash installer/.github/scripts/discord.sh downloads || true
           echo "(dry run: nothing was published)"
 
       - name: Publish (${{ env.DIST_OWNER }}/stein-loader)
@@ -216,24 +201,3 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
           TESTE: ${{ steps.version.outputs.teste }}
         run: bash installer/.github/scripts/publish-loader.sh "$DIST_OWNER/stein-loader" DIST_TOKEN
-
-      - name: Discord
-        if: env.ENSAIO != 'true' && steps.version.outputs.teste == ''
-        env:
-          GH_TOKEN: ${{ secrets.DIST_TOKEN }}
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_CANAL_DOWNLOADS: ${{ vars.DISCORD_CANAL_DOWNLOADS }}
-          DISCORD_CANAL_CHANGELOG: ${{ vars.DISCORD_CANAL_CHANGELOG }}
-          VERSION: ${{ steps.version.outputs.version }}
-          BRIDGE: ${{ steps.version.outputs.bridge }}
-          LOADER: ${{ steps.version.outputs.loader }}
-          VERSOES: |-
-            - Instalador: **${{ steps.version.outputs.version }}**
-            - Stein Bridge: **${{ steps.version.outputs.bridge }}**
-            - Stein Loader: **${{ steps.version.outputs.loader }}**
-        run: |
-          export ROTULO="Stein Loader" VERSAO="$VERSION" NOTAS="loader/changelog/$VERSION.pt_BR.md" \
-                 URL="https://github.com/$DIST_OWNER/stein-loader/releases/tag/v$VERSION"
-          bash installer/.github/scripts/discord.sh changelog
-          # One message about every component, rewritten after everything is published.
-          bash installer/.github/scripts/discord.sh downloads
