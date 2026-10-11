@@ -9,7 +9,7 @@
 # files as a workflow artifact and prints the release notes and the stein.json change, publishing nothing.
 #
 # On a tag:
-#   1. the changelog is required before anything is built: loader/changelog/<version>.en_US.md and .pt_BR.md (the
+#   1. the changelog is required before anything is built: loader/changelog/<version>.en_US.md (.pt_BR.md optional; the
 #      pack's notes live in the Loader repository; en_US goes on the release);
 #   2. release v<version> on Stein-Project/stein-loader: SteinLoader-Installer.jar, SteinLoader-Installer-windows.zip,
 #      runtime-*.zip and SHA256SUMS.txt (the Stein Client checks the installer and the runtimes against it);

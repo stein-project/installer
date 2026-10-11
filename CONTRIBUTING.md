@@ -33,7 +33,7 @@ the profile: the official launcher and an older one.
 
 ## Releases
 
-The installer's release is the pack players download. Write `changelog/<version>.en_US.md` and `.pt_BR.md` in the
+The installer's release is the pack players download. Write `changelog/<version>.en_US.md` (and optionally `.pt_BR.md`) in the
 [loader](https://github.com/Stein-Project/loader) repository, then push a `v<Install.VERSION>` tag here
 (`v<version>-rc.1` for a test version, seen only by the Stein Client's test channel). `.github/workflows/release.yml`
 builds the installer with the obfuscated Bridge and Loader and publishes it to the public distribution repository
