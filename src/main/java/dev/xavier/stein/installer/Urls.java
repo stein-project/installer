@@ -14,7 +14,8 @@ final class Urls {
     private Urls() {}
 
     /**
-     * Published mod list (stein.json); the system property {@code steinloader.index} overrides it.
+     * The published file (stein.json): the latest version and the official mods, by their indexes
+     * ({@code sources}); the system property {@code steinloader.index} overrides it.
      */
     static final String INDEX =
             System.getProperty(

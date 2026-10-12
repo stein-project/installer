@@ -59,7 +59,7 @@ import java.util.Set;
 public final class Install {
 
     /** Installer and installed package version (manifest, window, zip). */
-    public static final String VERSION = "0.1.30";
+    public static final String VERSION = "0.1.31";
 
     /**
      * Library versions: those of SteinBridge.VERSION and Loader.VERSION (the build,

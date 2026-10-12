@@ -30,9 +30,12 @@ import java.util.zip.ZipFile;
 /**
  * The mods, downloaded and updated by the installer.
  *
- * <p>The installer reads the list published as {@code stein.json} (the one CI writes on every
- * release) and puts each chosen mod in the mods folder, already at its latest version. A new mod
- * shows up for everyone without a new installer.
+ * <p>The installer reads the official list from {@code stein.json}: its {@code sources} are the
+ * indexes each official mod publishes with every release ({@code steinmods.json}, always at {@code
+ * releases/latest/download}), and it puts each chosen mod in the mods folder, already at its latest
+ * version. A new mod or version shows up for everyone without a new installer. Mods that left the
+ * official list (Combat and Mouse, now third-party mods updated by the Stein Client) are simply no
+ * longer on it, so a copy already in the folder stays as it is.
  *
  * <p>Three rules that matter more than convenience:
  *
@@ -87,6 +90,11 @@ final class Mods {
                     && file.indexOf('\\') < 0;
         }
 
+        /** The id inside the mod (or the short id when the list has none): one per mod. */
+        String key() {
+            return modId.isEmpty() ? id : modId;
+        }
+
         /** Does this mod need a newer Loader than the one this installer carries? */
         boolean needsNewerLoader() {
             return !loader.isEmpty() && compare(loader, Install.LOADER_VERSION) > 0;
@@ -100,7 +108,13 @@ final class Mods {
 
     private Mods() {}
 
-    /** The published list, or empty when it cannot be fetched (offline, server down). */
+    /**
+     * The published list, or empty when it cannot be fetched (offline, server down). With {@code
+     * sources} in {@code stein.json}, the list is the {@code mods} of each official mod's own index
+     * ({@code steinmods.json}), in that order; a source that does not answer is left out (its mods
+     * are not touched). Without it, the {@code mods} of {@code stein.json} itself (the list before
+     * 12/10/2026, kept there for older installers).
+     */
     static List<Mod> index() {
         List<Mod> out = new ArrayList<>();
         try {
@@ -114,21 +128,52 @@ final class Mods {
                     && "1.8".equals(System.getProperty("java.specification.version"))) {
                 System.setProperty("https.protocols", "TLSv1.2");
             }
-            byte[] bytes = download(Urls.INDEX, null);
-            Object root = Json.parse(new String(bytes, StandardCharsets.UTF_8));
-            Object mods = Json.object(root).get("mods");
-            if (mods instanceof List) {
-                for (Object o : (List<?>) mods) {
-                    Mod m = new Mod(Json.object(o));
-                    if (m.isValid()) {
-                        out.add(m);
+            Map<String, Object> root = fetchJson(Urls.INDEX);
+            Object sources = root.get("sources");
+            if (sources instanceof List && !((List<?>) sources).isEmpty()) {
+                for (Object s : (List<?>) sources) {
+                    String url = String.valueOf(s);
+                    if (!url.startsWith("https://")) {
+                        continue;
+                    }
+                    try {
+                        addMods(out, fetchJson(url).get("mods"));
+                    } catch (IOException | RuntimeException e) {
+                        System.err.println(
+                                "mod source unavailable, skipped: " + url + " (" + e + ")");
                     }
                 }
+            } else {
+                addMods(out, root.get("mods"));
             }
         } catch (IOException | RuntimeException e) {
             return new ArrayList<>();
         }
         return out;
+    }
+
+    private static Map<String, Object> fetchJson(String url) throws IOException {
+        return Json.object(Json.parse(new String(download(url, null), StandardCharsets.UTF_8)));
+    }
+
+    /** The valid entries of a {@code mods} list, skipping a mod already on the list. */
+    private static void addMods(List<Mod> out, Object mods) {
+        if (!(mods instanceof List)) {
+            return;
+        }
+        for (Object o : (List<?>) mods) {
+            Mod m = new Mod(Json.object(o));
+            boolean dup = false;
+            for (Mod have : out) {
+                if (have.key().equals(m.key())) {
+                    dup = true;
+                    break;
+                }
+            }
+            if (m.isValid() && !dup) {
+                out.add(m);
+            }
+        }
     }
 
     /**
