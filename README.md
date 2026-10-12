@@ -26,7 +26,7 @@ stein/
 └── installer/   this repository
 ```
 
-You need a **JDK 17 or newer** to start Gradle (`JAVA_HOME`) and Minecraft 1.8.9 installed (or `./gradlew fetchMinecraft`
+You need a **JDK 25 or newer** (`JAVA_HOME`) and Minecraft 1.8.9 installed (or `./gradlew fetchMinecraft`
 in the Bridge, then pass `-Pstein.mcDir=../bridge/build/mc`). Then, in `installer/`:
 
 ```sh
