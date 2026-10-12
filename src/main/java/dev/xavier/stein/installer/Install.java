@@ -198,7 +198,7 @@ public final class Install {
         public int ramGb = 3;
 
         /**
-         * The mods the installer puts in the folder, by id ({@code combat}, {@code hud}...). null
+         * The mods the installer puts in the folder, by id ({@code hud}, {@code replay}...). null
          * means "leave the mods folder alone": the case when the published list did not arrive, or
          * when whoever is installing asked to leave it as it is.
          */

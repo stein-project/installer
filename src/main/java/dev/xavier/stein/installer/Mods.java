@@ -33,9 +33,8 @@ import java.util.zip.ZipFile;
  * <p>The installer reads the official list from {@code stein.json}: its {@code sources} are the
  * indexes each official mod publishes with every release ({@code steinmods.json}, always at {@code
  * releases/latest/download}), and it puts each chosen mod in the mods folder, already at its latest
- * version. A new mod or version shows up for everyone without a new installer. Mods that left the
- * official list (Combat and Mouse, now third-party mods updated by the Stein Client) are simply no
- * longer on it, so a copy already in the folder stays as it is.
+ * version. A new mod or version shows up for everyone without a new installer. A mod that leaves
+ * the official list is simply no longer on it, so a copy already in the folder stays as it is.
  *
  * <p>Three rules that matter more than convenience:
  *
@@ -56,7 +55,7 @@ final class Mods {
     static final class Mod {
         final String id;
 
-        /** The id inside steinmod.json ("steincombat"), which recognises the installed file. */
+        /** The id inside steinmod.json ("steinhud"), which recognises the installed file. */
         final String modId;
 
         final String name;
@@ -278,11 +277,11 @@ final class Mods {
     }
 
     /**
-     * Was the mod chosen? Both the component's short id ({@code combat}, which the window and
-     * {@code --mods} use) and the id inside the mod ({@code steincombat}, which is what is read
-     * from the folder to know what is installed) count. Accepting both avoids one side talking
-     * about one id and the other about another, which in the first version deleted an installed mod
-     * because it looked like it had not been chosen.
+     * Was the mod chosen? Both the component's short id ({@code hud}, which the window and {@code
+     * --mods} use) and the id inside the mod ({@code steinhud}, which is what is read from the
+     * folder to know what is installed) count. Accepting both avoids one side talking about one id
+     * and the other about another, which in the first version deleted an installed mod because it
+     * looked like it had not been chosen.
      */
     private static boolean isChosen(Mod mod, Set<String> chosen) {
         return chosen.contains(mod.id) || !mod.modId.isEmpty() && chosen.contains(mod.modId);

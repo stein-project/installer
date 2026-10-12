@@ -73,7 +73,7 @@ import javax.swing.event.DocumentListener;
  * <pre>
  * [--mc folder]                           window, with the folder already filled in
  * --cli [--mc folder] [--lang en|es|pt] [--no-loader] [--ram GB] [--uninstall]
- *      [--mods all|none|keep|combat,hud,...]  default: updates the mods already there
+ *      [--mods all|none|keep|hud,replay,...]  default: updates the mods already there
  * --cli --list                            only lists the .minecraft folders found
  * </pre>
  */
@@ -468,7 +468,7 @@ public final class InstallerApp {
                 case "--uninstall":
                     uninstall = true;
                     break;
-                // --mods all | none | combat,hud | keep (default: only touches what is already
+                // --mods all | none | hud,replay | keep (default: only touches what is already
                 // there)
                 case "--mods":
                     o.mods = requestedMods(args[++i]);
