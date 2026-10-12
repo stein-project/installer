@@ -67,7 +67,7 @@ public final class Install {
      */
     public static final String BRIDGE_VERSION = "0.1.20";
 
-    public static final String LOADER_VERSION = "0.1.24";
+    public static final String LOADER_VERSION = "0.1.25";
 
     /** Folder and version id in the launcher, in LiteLoader style (1.8.9-LiteLoader1.8.9). */
     public static final String VERSION_ID = "1.8.9-SteinLoader";
