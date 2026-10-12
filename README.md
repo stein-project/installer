@@ -56,9 +56,16 @@ timestamps, so the same Java gives the same zip and players do not download it a
 | `tools/MakeIco.java` | the Windows icon, from `src/main/resources/sl-256.png` |
 | `gradle/runtimes.properties` | the pinned Corretto JDKs |
 
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. Read the
+[contributing guide](https://github.com/Stein-Project/.github/blob/main/CONTRIBUTING.md) first; your first pull
+request asks you to sign the [CLA](https://github.com/Stein-Project/.github/blob/main/CLA.md). What is specific to the
+installer is in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Licence
 
-Proprietary software, all rights reserved: see [LICENSE](LICENSE). Third-party software and its licences are in
-[NOTICE](NOTICE). The Stein name and logo are trademarks: see the [trademark policy](https://github.com/Stein-Project/.github/blob/main/TRADEMARK.md).
+Stein Installer is licensed under the [Mozilla Public License 2.0](LICENSE). Third-party software and its licences are
+in [NOTICE](NOTICE). The Stein name and logo are not covered by the licence: see the [trademark policy](https://github.com/Stein-Project/.github/blob/main/TRADEMARK.md).
 
-Created by Breno Xavier.
+Created by [Breno Xavier](https://github.com/brenoxavier).

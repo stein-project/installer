@@ -18,8 +18,7 @@
 # Every step is idempotent: running the same tag again publishes nothing twice.
 #
 # Settings of this repository (see LEIA-ME.md of the local stein-project folder):
-#   secrets    BRIDGE_DEPLOY_KEY, LOADER_DEPLOY_KEY, SDK_DEPLOY_KEY   read the private sibling repositories
-#              DIST_TOKEN          fine-grained PAT with Contents: read and write on Stein-Project/stein-loader
+#   secrets    DIST_TOKEN          fine-grained PAT with Contents: read and write on Stein-Project/stein-loader
 #   variables  DIST_OWNER          optional, default Stein-Project
 name: release
 
@@ -47,22 +46,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: installer
-      # The installer ships the Bridge and the Loader built from source, next to this repository.
+      # The installer ships the Bridge and the Loader built from source (public repositories), next to this one.
       - uses: actions/checkout@v4
         with:
           repository: Stein-Project/bridge
           path: bridge
-          ssh-key: ${{ secrets.BRIDGE_DEPLOY_KEY }}
       - uses: actions/checkout@v4
         with:
           repository: Stein-Project/loader
           path: loader
-          ssh-key: ${{ secrets.LOADER_DEPLOY_KEY }}
       - uses: actions/checkout@v4
         with:
           repository: Stein-Project/sdk
           path: sdk
-          ssh-key: ${{ secrets.SDK_DEPLOY_KEY }}
 
       # First on purpose: a release without its notes stops in seconds, not after the build.
       - name: Version and changelog

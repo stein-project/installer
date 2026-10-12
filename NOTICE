@@ -1,9 +1,9 @@
 Stein Installer
 Copyright (c) 2026 Breno Xavier (https://github.com/brenoxavier)
 
-Part of Stein (https://github.com/Stein-Project). Proprietary software, all rights reserved (see LICENSE).
+Part of Stein (https://github.com/Stein-Project). Licensed under the Mozilla Public License 2.0 (see LICENSE).
 
-The Stein name and logo are trademarks of Breno Xavier: see
+The Stein name and logo are trademarks of Breno Xavier and are not covered by the licence: see
 https://github.com/Stein-Project/.github/blob/main/TRADEMARK.md
 
 NOT AN OFFICIAL MINECRAFT PRODUCT. NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.
@@ -14,7 +14,7 @@ the game is patched at runtime, on the player's machine, from the player's own c
 Third-party software shipped with the installer
 -------------------------------------------------------------------------------
 Stein Bridge and Stein Loader (https://github.com/Stein-Project) - in the installer payload
-  Copyright (c) 2026 Breno Xavier. Proprietary, all rights reserved (the Loader API: MIT).
+  Copyright (c) 2026 Breno Xavier. Mozilla Public License 2.0 (the Loader API: MIT License).
 
 Amazon Corretto 25 (https://aws.amazon.com/corretto) - the Java runtime in runtime-*.zip and in the Windows app
   GNU General Public License v2 with the Classpath Exception. The runtime is a jlink image of the unmodified

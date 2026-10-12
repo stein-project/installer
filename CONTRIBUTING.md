@@ -1,7 +1,8 @@
 # Contributing to Stein Installer
 
 Read the [Stein contributing guide](https://github.com/Stein-Project/.github/blob/main/CONTRIBUTING.md) first: it
-covers the rules, code style and commits. This page is what is specific to the installer.
+covers the rules, code style, commits and the [CLA](https://github.com/Stein-Project/.github/blob/main/CLA.md) your first
+pull request asks you to sign. This page is what is specific to the installer.
 
 ## Build and check
 
