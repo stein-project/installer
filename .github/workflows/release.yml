@@ -98,13 +98,10 @@ jobs:
       - name: Minecraft 1.8.9
         working-directory: bridge
         run: ./gradlew fetchMinecraft
-      # The player-facing build bundles the obfuscated Bridge and Loader.
-      # -Pstein.dist=true: the payload carries the obfuscated Bridge and Loader with the translated patcher rules (it is
-      # also the default; stated here so a release never depends on it). The log says "payload: obfuscated Bridge and
-      # Loader, translated rules".
+      # The payload carries the Bridge and the Loader as built (open source, not obfuscated) and the patcher rules.
       - name: Build and check
         working-directory: installer
-        run: ./gradlew build -Pstein.mcDir="$GITHUB_WORKSPACE/bridge/build/mc" -Pstein.dist=true
+        run: ./gradlew build -Pstein.mcDir="$GITHUB_WORKSPACE/bridge/build/mc"
 
       - name: Files and notes
         env:
@@ -167,20 +164,6 @@ jobs:
             dist/
             notes.md
           retention-days: 14
-
-      # The obfuscation mapping (the table that turns a player's log back into names) never goes to a release, but
-      # without it a report from a player is unreadable.
-      - name: Keep the obfuscation mapping (private)
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: mapping-${{ steps.version.outputs.tag }}-${{ github.run_id }}
-          path: |
-            bridge/build/dist-mapping/
-            loader/build/dist-mapping/
-            installer/build/dist-mapping/
-          if-no-files-found: ignore
-          retention-days: 90
 
       - name: What it would publish (dry run)
         if: env.ENSAIO == 'true'

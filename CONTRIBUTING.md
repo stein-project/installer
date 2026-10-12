@@ -36,17 +36,14 @@ the profile: the official launcher and an older one.
 The installer's release is the pack players download. Write `changelog/<version>.en_US.md` (and optionally `.pt_BR.md`) in the
 [loader](https://github.com/Stein-Project/loader) repository, then push a `v<Install.VERSION>` tag here
 (`v<version>-rc.1` for a test version, seen only by the Stein Client's test channel). `.github/workflows/release.yml`
-builds the installer with the obfuscated Bridge and Loader and publishes it to the public distribution repository
+builds the installer with the Bridge and the Loader and publishes it to the public distribution repository
 [Stein-Project/stein-loader](https://github.com/Stein-Project/stein-loader): the release (installer, runtimes,
 `SHA256SUMS.txt`) and `latest` in its `stein.json`. The old `x4vieer/stein-loader` is
 frozen and gets nothing from here. Running it by hand is a dry run that publishes nothing. The installer reads `stein.json` (the mods index)
 and the runtimes from that repository (`Urls.java`).
 
-## The obfuscated payload
+## The payload
 
-`./gradlew build` builds the installer with the **obfuscated** Bridge and Loader (`../bridge` and `../loader`
-`./gradlew dist`) and the patcher rules translated to their names (`../bridge/build/dist/rules`): that is what
-players get and what every release ships. `-Pstein.dist=false` builds it with the plain jars and commented rules, for
-a quicker local test only; the payload task says which one it built. Nothing of `build/dist-mapping` goes into the
-payload (the build checks it). A player's stack trace is retraced with the mapping of the Loader build that went into
-that release (`../loader/build/dist-mapping/steinloader.txt`, see the Loader's CONTRIBUTING).
+`./gradlew build` builds the installer with the Bridge and the Loader as their builds make them (`../bridge` and
+`../loader`, both open source and not obfuscated), LWJGL 3, the Patcher and the Bridge's patcher rules. A player's
+stack trace names our classes as they are in the source.

@@ -4,8 +4,6 @@
 //                              (build/installer/runtime-<system>.zip) and, on Windows, the app for people without Java
 //                              (build/installer/SteinLoader-Installer-windows.zip)
 //   ./gradlew build -Pstein.targets=windows     only some systems (a quick local build)
-//   ./gradlew build -Pstein.dist=false          with the plain Bridge and Loader (local tests only; the default and every
-//                                               release ship the obfuscated ones, ../bridge and ../loader ./gradlew dist)
 //   ./gradlew spotlessApply    formats the Java code (google-java-format, AOSP style)
 //
 // The installer jar carries the payload: the Stein Bridge and the Stein Loader (built by ../bridge and ../loader),
@@ -61,18 +59,12 @@ val bridgeBuild = gradle.includedBuild("stein-bridge")
 val loaderBuild = gradle.includedBuild("stein-loader")
 val bridgeDir = bridgeBuild.projectDir
 val loaderDir = loaderBuild.projectDir
-/**
- * The obfuscated build (the default): the payload carries the Bridge and the Loader renamed by ProGuard
- * (../bridge/build/dist, ../loader/build/dist) and the patcher rules translated to those names (../bridge/build/dist/rules).
- * That is what players get, and what a release must ship. -Pstein.dist=false builds the installer with the plain jars
- * and rules (a quicker local build, never released). The name mappings stay in each repository's build/dist-mapping:
- * nothing of them goes into the payload.
- */
-val dist = providers.gradleProperty("stein.dist").map { it.isEmpty() || it.toBoolean() }.getOrElse(true)
+// The payload carries the Bridge and the Loader as their builds make them (both open source, neither obfuscated) and
+// the Bridge's patcher rules.
 val upstream = listOf(
     bridgeBuild.task(":assemble"), bridgeBuild.task(":runtimeLibs"), bridgeBuild.task(":patcherClasses"),
     loaderBuild.task(":assemble"),
-) + if (dist) listOf(bridgeBuild.task(":dist"), loaderBuild.task(":dist")) else emptyList()
+)
 
 // The library versions the installer writes into the launcher profile follow the code: SteinBridge.VERSION and
 // Loader.VERSION.
@@ -97,37 +89,16 @@ val payload = tasks.register<Sync>("payload") {
     description = "Assembles the installer payload in build/payload."
     dependsOn(upstream, versionCheck)
     into(layout.buildDirectory.dir("payload"))
-    inputs.property("dist", dist)
     from(bridgeDir.resolve("build/runtime-libs/lwjgl")) { into("lwjgl") }
     from(bridgeDir.resolve("build/classes/java/patcher")) { into("patcher") }
     from(bridgeDir.resolve("build/runtime-libs/asm")) { into("patcher/asm") }
-    if (dist) {
-        from(bridgeDir.resolve("build/dist/steinbridge.jar"))
-        from(loaderDir.resolve("build/dist/steinloader.jar"))
-        // The rules with the obfuscated names and no comments (name-mapping.txt, the LWJGL renames, included).
-        from(bridgeDir.resolve("build/dist/rules")) { into("rules") }
-    } else {
-        from(bridgeDir.resolve("build/libs/steinbridge.jar"))
-        from(loaderDir.resolve("build/libs/steinloader.jar"))
-        from(bridgeDir.resolve("patcher")) {
-            include("*.tsv")
-            into("rules")
-        }
-        from(bridgeDir.resolve("scan/name-mapping.txt")) { into("rules") }
+    from(bridgeDir.resolve("build/libs/steinbridge.jar"))
+    from(loaderDir.resolve("build/libs/steinloader.jar"))
+    from(bridgeDir.resolve("patcher")) {
+        include("*.tsv")
+        into("rules")
     }
-    doLast {
-        // The payload is what reaches players: nothing from build/dist-mapping, and with dist no comment of the rules.
-        val out = destinationDir
-        check(out.walkTopDown().none { it.isFile && (it.name.endsWith(".pro") || it.name == "codes.txt") }) {
-            "the payload carries a file of build/dist-mapping"
-        }
-        if (dist) {
-            val commented = out.resolve("rules").listFiles()!!.filter { f -> f.readLines().any { it.startsWith("#") } }
-            check(commented.isEmpty()) { "rules with comments (not the obfuscated build's): $commented" }
-        }
-        logger.lifecycle(if (dist) "payload: obfuscated Bridge and Loader, translated rules" else
-            "payload: PLAIN Bridge and Loader (-Pstein.dist=false: not for release)")
-    }
+    from(bridgeDir.resolve("scan/name-mapping.txt")) { into("rules") }
 }
 
 // ---- the Java 25 of each system ----
