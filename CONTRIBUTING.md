@@ -36,12 +36,17 @@ the profile: the official launcher and an older one.
 
 The installer's release is the pack players download. Write `changelog/<version>.en_US.md` (and optionally `.pt_BR.md`) in the
 [loader](https://github.com/Stein-Project/loader) repository, then push a `v<Install.VERSION>` tag here
-(`v<version>-rc.1` for a test version, seen only by the Stein Client's test channel). `.github/workflows/release.yml`
-builds the installer with the Bridge and the Loader and publishes it to the public distribution repository
-[Stein-Project/stein-loader](https://github.com/Stein-Project/stein-loader): the release (installer, runtimes,
-`SHA256SUMS.txt`) and `latest` in its `stein.json`. The old `x4vieer/stein-loader` is
-frozen and gets nothing from here. Running it by hand is a dry run that publishes nothing. The installer reads `stein.json` (the mods index)
-and the runtimes from that repository (`Urls.java`).
+(`v<version>-rc.1` for a test version, seen only by the test channel). `.github/workflows/release.yml` builds the
+installer with the Bridge and the Loader and publishes it as a release of this repository: the installer, the runtimes,
+`SHA256SUMS.txt` and `stein.json`. Running it by hand is a dry run that publishes nothing.
+
+`stein.json` in this repository holds what is edited by hand: the Discord invite, the message on the Loader's menu
+(`news`) and the official mods (`sources`, the index of each one). Every release carries it with `latest` filled in, and
+the Stein Client, the installer and the Loader read it at `releases/latest/download/stein.json` (`Urls.java`). A change
+to the file on `main` is uploaded to the latest release by `.github/workflows/index.yml`, with no new release.
+
+Releases up to 0.1.33 went to [Stein-Project/stein-loader](https://github.com/Stein-Project/stein-loader), which is
+frozen: launchers and installers up to that version read it and stay on 0.1.33.
 
 ## The payload
 

@@ -1,9 +1,9 @@
 # The player-facing pack release: the installer (with the Bridge and the Loader inside, built from source) and the Java
-# runtimes, published to the public distribution repository Stein-Project/stein-loader.
+# runtimes, published as a release of this repository.
 #
 #   git tag v0.1.30 && git push origin v0.1.30            stable: the tag must be v<Install.VERSION>
-#   git tag v0.1.30-rc.1 && git push origin v0.1.30-rc.1  test version: a pre-release that only the Stein Client's
-#                                                         test channel sees (the "test" block of stein.json)
+#   git tag v0.1.30-rc.1 && git push origin v0.1.30-rc.1  test version: a pre-release that only the test channel sees
+#                                                         (the "test" block of stein.json)
 #
 # Run by hand (Actions > release > Run workflow) it is a dry run (ensaio): it builds, checks the changelog, keeps the
 # files as a workflow artifact and prints the release notes and the stein.json change, publishing nothing.
@@ -11,15 +11,15 @@
 # On a tag:
 #   1. the changelog is required before anything is built: loader/changelog/<version>.en_US.md (.pt_BR.md optional; the
 #      pack's notes live in the Loader repository; en_US goes on the release);
-#   2. release v<version> on Stein-Project/stein-loader: SteinLoader-Installer.jar, SteinLoader-Installer-windows.zip,
-#      runtime-*.zip and SHA256SUMS.txt (the Stein Client checks the installer and the runtimes against it);
-#   3. stein.json on the main branch of that repository: "latest" (version and url) for a stable release, "test.loader"
-#      for a test one. The mods index ("mods"), "discord" and "news" are kept as they are.
-# Every step is idempotent: running the same tag again publishes nothing twice.
+#   2. release v<version> here: SteinLoader-Installer.jar, SteinLoader-Installer-windows.zip, runtime-*.zip,
+#      SHA256SUMS.txt (the Stein Client checks the installer and the runtimes against it) and stein.json (stein.json of
+#      this repository with "latest" filled in; .github/scripts/index.sh), read at releases/latest/download/stein.json;
+#   3. a test release instead updates "test.loader" in the stein.json of the latest stable release.
+# Every step is idempotent: running the same tag again publishes nothing twice. Nothing else is needed: the release goes
+# to this repository with the workflow's own token.
 #
-# Settings of this repository (see LEIA-ME.md of the local stein-project folder):
-#   secrets    DIST_TOKEN          fine-grained PAT with Contents: read and write on Stein-Project/stein-loader
-#   variables  DIST_OWNER          optional, default Stein-Project
+# Stein-Project/stein-loader, where releases went up to 0.1.33, is frozen: launchers and installers up to that version
+# read its stein.json and its releases, and stay on 0.1.33.
 name: release
 
 on:
@@ -28,7 +28,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 defaults:
   run:
@@ -40,7 +40,6 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 90
     env:
-      DIST_OWNER: ${{ vars.DIST_OWNER || 'Stein-Project' }}
       ENSAIO: ${{ github.event_name != 'push' }}
     steps:
       - uses: actions/checkout@v4
@@ -167,16 +166,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          echo "release v$VERSION -> $DIST_OWNER/stein-loader:"
+          echo "release v$VERSION -> $GITHUB_REPOSITORY:"
           ls dist
-          echo "stein.json: latest = {version: $VERSION, url: https://github.com/$DIST_OWNER/stein-loader/releases/latest}"
+          bash installer/.github/scripts/index.sh "$GITHUB_REPOSITORY" stein-preview.json "$VERSION"
+          cat stein-preview.json
           echo "(dry run: nothing was published)"
 
-      - name: Publish (${{ env.DIST_OWNER }}/stein-loader)
+      - name: Publish
         if: env.ENSAIO != 'true'
         env:
-          GH_TOKEN: ${{ secrets.DIST_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
           TAG: ${{ steps.version.outputs.tag }}
           TESTE: ${{ steps.version.outputs.teste }}
-        run: bash installer/.github/scripts/publish-loader.sh "$DIST_OWNER/stein-loader" DIST_TOKEN
+        run: bash installer/.github/scripts/publish.sh "$GITHUB_REPOSITORY"
