@@ -14,13 +14,14 @@ final class Urls {
     private Urls() {}
 
     /**
-     * The published file (stein.json): the latest version and the official mods, by their indexes
-     * ({@code sources}); the system property {@code steinloader.index} overrides it.
+     * The published file (stein.json, a file of this repository's latest release): the latest
+     * version and the official mods, by their indexes ({@code sources}); the system property {@code
+     * steinloader.index} overrides it.
      */
     static final String INDEX =
             System.getProperty(
                     "steinloader.index",
-                    "https://raw.githubusercontent.com/Stein-Project/stein-loader/main/stein.json");
+                    "https://github.com/Stein-Project/installer/releases/latest/download/stein.json");
 
     /**
      * Base of the release downloads that hold the Java runtimes ({@code
@@ -29,7 +30,7 @@ final class Urls {
     static final String RUNTIME_BASE =
             System.getProperty(
                     "steinloader.runtimes",
-                    "https://github.com/Stein-Project/stein-loader/releases/download/");
+                    "https://github.com/Stein-Project/installer/releases/download/");
 
     /** Maven Central, the source of the LWJGL libraries declared in the version JSON. */
     static final String MAVEN = "https://repo1.maven.org/maven2/";
