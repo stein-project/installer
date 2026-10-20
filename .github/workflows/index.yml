@@ -1,6 +1,8 @@
-# Uploads stein.json again to the latest stable release when the file in this repository changes (discord, news, the
-# official mods in "sources"), without a new release. The Stein Client, the installer and the Loader in the game read
-# it at releases/latest/download/stein.json. Also runs by hand (Actions > index > Run workflow).
+# A bridge for programs older than the Stein registry: uploads stein.json again to the latest stable release when the
+# file in this repository changes, without a new release. Launchers, installers and Loaders from before the registry
+# read it at releases/latest/download/stein.json. Discord, news and the official mods ("sources") are now edited in
+# stein.json of Stein-Project/registry, which every current program reads; change this copy only for those older
+# programs. Also runs by hand (Actions > index > Run workflow).
 name: index
 
 on:

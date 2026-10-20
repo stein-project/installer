@@ -14,14 +14,33 @@ final class Urls {
     private Urls() {}
 
     /**
-     * The published file (stein.json, a file of this repository's latest release): the latest
-     * version and the official mods, by their indexes ({@code sources}); the system property {@code
-     * steinloader.index} overrides it.
+     * The Stein registry ({@link Registry}): signed files the project publishes for its programs;
+     * the system property {@code stein.registry} reads another copy (always ending in "/").
      */
-    static final String INDEX =
-            System.getProperty(
-                    "steinloader.index",
-                    "https://github.com/Stein-Project/installer/releases/latest/download/stein.json");
+    static final String REGISTRY =
+            slash(
+                    System.getProperty(
+                            "stein.registry", "https://stein-project.github.io/registry/"));
+
+    /**
+     * The published file (stein.json of the registry): the latest version and the official mods, by
+     * their indexes ({@code sources}).
+     */
+    static final String INDEX = REGISTRY + "stein.json";
+
+    /**
+     * The same file as a file of this repository's latest release, which its release workflow keeps
+     * publishing for installers older than the registry: read, unsigned, when the registry does not
+     * answer or its signature cannot be checked (Java 8 to 14 have no ed25519).
+     */
+    static final String INDEX_BRIDGE =
+            "https://github.com/Stein-Project/installer/releases/latest/download/stein.json";
+
+    /**
+     * {@code steinloader.index}: another stein.json, read as is and unsigned (tests); unset by
+     * default.
+     */
+    static final String INDEX_OVERRIDE = System.getProperty("steinloader.index");
 
     /**
      * Base of the release downloads that hold the Java runtimes ({@code
@@ -31,6 +50,11 @@ final class Urls {
             System.getProperty(
                     "steinloader.runtimes",
                     "https://github.com/Stein-Project/installer/releases/download/");
+
+    private static String slash(String base) {
+        String b = base.trim();
+        return b.endsWith("/") ? b : b + "/";
+    }
 
     /** Maven Central, the source of the LWJGL libraries declared in the version JSON. */
     static final String MAVEN = "https://repo1.maven.org/maven2/";

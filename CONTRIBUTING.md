@@ -38,12 +38,15 @@ The installer's release is the pack players download. Write `changelog/<version>
 [loader](https://github.com/Stein-Project/loader) repository, then push a `v<Install.VERSION>` tag here
 (`v<version>-rc.1` for a test version, seen only by the test channel). `.github/workflows/release.yml` builds the
 installer with the Bridge and the Loader and publishes it as a release of this repository: the installer, the runtimes,
-`SHA256SUMS.txt` and `stein.json`. Running it by hand is a dry run that publishes nothing.
+`SHA256SUMS.txt` and `stein.json`, and writes `latest` into `stein.json` of the
+[Stein registry](https://github.com/Stein-Project/registry) (the `REGISTRY_TOKEN` secret: Contents: write on the
+registry). Running it by hand is a dry run that publishes nothing.
 
-`stein.json` in this repository holds what is edited by hand: the Discord invite, the message on the Loader's menu
-(`news`) and the official mods (`sources`, the index of each one). Every release carries it with `latest` filled in, and
-the Stein Client, the installer and the Loader read it at `releases/latest/download/stein.json` (`Urls.java`). A change
-to the file on `main` is uploaded to the latest release by `.github/workflows/index.yml`, with no new release.
+The Discord invite, the message on the Loader's menu (`news`) and the official mods (`sources`) are edited in
+`stein.json` of the registry, which signs it; the Stein Client, the installer and the Loader read it there
+(`Urls.java`). `stein.json` in this repository is a bridge for programs older than the registry: every release carries it
+with `latest` filled in at `releases/latest/download/stein.json`, the installer falls back to it when the registry does
+not answer, and a change to it on `main` is uploaded to the latest release by `.github/workflows/index.yml`.
 
 Releases up to 0.1.33 went to [Stein-Project/stein-loader](https://github.com/Stein-Project/stein-loader), which is
 frozen: launchers and installers up to that version read it and stay on 0.1.33.

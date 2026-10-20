@@ -6,7 +6,8 @@
 #                                                         (the "test" block of stein.json)
 #
 # Run by hand (Actions > release > Run workflow) it is a dry run (ensaio): it builds, checks the changelog, keeps the
-# files as a workflow artifact and prints the release notes and the stein.json change, publishing nothing.
+# files as a workflow artifact and prints the release notes and both stein.json changes (the release's and the
+# registry's), publishing nothing.
 #
 # On a tag:
 #   1. the changelog is required before anything is built: loader/changelog/<version>.en_US.md (.pt_BR.md optional; the
@@ -14,9 +15,12 @@
 #   2. release v<version> here: SteinLoader-Installer.jar, SteinLoader-Installer-windows.zip, runtime-*.zip,
 #      SHA256SUMS.txt (the Stein Client checks the installer and the runtimes against it) and stein.json (stein.json of
 #      this repository with "latest" filled in; .github/scripts/index.sh), read at releases/latest/download/stein.json;
-#   3. a test release instead updates "test.loader" in the stein.json of the latest stable release.
-# Every step is idempotent: running the same tag again publishes nothing twice. Nothing else is needed: the release goes
-# to this repository with the workflow's own token.
+#   3. a test release instead updates "test.loader" in the stein.json of the latest stable release;
+#   4. "latest" (or "test.loader") is written into stein.json of the Stein registry (Stein-Project/registry), which is
+#      what the Stein Client, the installer and the Loader read now, signed (.github/scripts/registry.sh). The release's
+#      own stein.json stays as a bridge for programs older than the registry.
+# Every step is idempotent: running the same tag again publishes nothing twice. The release goes to this repository
+# with the workflow's own token; the registry needs the REGISTRY_TOKEN secret (Contents: write on the registry).
 #
 # Stein-Project/stein-loader, where releases went up to 0.1.33, is frozen: launchers and installers up to that version
 # read its stein.json and its releases, and stay on 0.1.33.
@@ -170,12 +174,14 @@ jobs:
           ls dist
           bash installer/.github/scripts/index.sh "$GITHUB_REPOSITORY" stein-preview.json "$VERSION"
           cat stein-preview.json
+          ENSAIO=true bash installer/.github/scripts/publish.sh "$GITHUB_REPOSITORY"
           echo "(dry run: nothing was published)"
 
       - name: Publish
         if: env.ENSAIO != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
           VERSION: ${{ steps.version.outputs.version }}
           TAG: ${{ steps.version.outputs.tag }}
           TESTE: ${{ steps.version.outputs.teste }}
