@@ -42,7 +42,9 @@ final class Registry {
 
     /** Is this address a file of the registry (and so must come signed)? */
     static boolean isRegistry(String url) {
-        return url.startsWith(Urls.REGISTRY);
+        // The default one too: a stein.json from another copy still lists the official mods at the
+        // published registry, and those must not be read unsigned.
+        return url.startsWith(Urls.REGISTRY) || url.startsWith(Urls.REGISTRY_DEFAULT);
     }
 
     /**

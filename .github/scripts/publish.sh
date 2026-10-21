@@ -14,19 +14,20 @@ here="$(cd "$(dirname "$0")" && pwd)"
 . "$here/registry.sh"
 
 # stein.json of the registry with this release in it: the registry's own copy is the base, so its discord, news and
-# sources stay as they were edited there.
+# sources stay as they were edited there. registry_update rebuilds it from the copy it is about to replace.
 registry_index() {
-  local work
-  work="$(mktemp -d)"
-  if ! registry_get stein.json "$work/base.json"; then
-    rm -rf "$work"
+  _REGISTRY_RELEASE="$1"
+  if ! registry_update stein.json "Stein Loader $1 (installer release)" _registry_stein; then
     # A dry run only reports it; a real release must not finish without the registry knowing about it.
-    [ "${ENSAIO:-false}" = true ] && { echo "::warning::stein.json of $REGISTRY_REPO is unreachable"; return 0; }
-    echo "::error::stein.json of $REGISTRY_REPO is unreachable"; return 1
+    [ "${ENSAIO:-false}" = true ] && { echo "::warning::stein.json of $REGISTRY_REPO could not be read"; return 0; }
+    return 1
   fi
-  bash "$here/index.sh" "$REPO" "$work/stein.json" "$1" "$work/base.json"
-  registry_put stein.json "$work/stein.json" "Stein Loader $1 (installer release)"
-  rm -rf "$work"
+}
+
+# registry_update's build function: <current stein.json of the registry> <out file>.
+_registry_stein() {
+  [ -n "$1" ] || { echo "::error::$REGISTRY_REPO has no stein.json"; return 1; }
+  bash "$here/index.sh" "$REPO" "$2" "$_REGISTRY_RELEASE" "$1"
 }
 
 : "${VERSION:?}"

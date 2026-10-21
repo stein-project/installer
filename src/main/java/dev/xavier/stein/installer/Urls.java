@@ -17,10 +17,12 @@ final class Urls {
      * The Stein registry ({@link Registry}): signed files the project publishes for its programs;
      * the system property {@code stein.registry} reads another copy (always ending in "/").
      */
-    static final String REGISTRY =
-            slash(
-                    System.getProperty(
-                            "stein.registry", "https://stein-project.github.io/registry/"));
+    static final String REGISTRY_DEFAULT = "https://stein-project.github.io/registry/";
+
+    /**
+     * The registry actually read: the default one, or another copy given by {@code stein.registry}.
+     */
+    static final String REGISTRY = slash(System.getProperty("stein.registry", REGISTRY_DEFAULT));
 
     /**
      * The published file (stein.json of the registry): the latest version and the official mods, by
