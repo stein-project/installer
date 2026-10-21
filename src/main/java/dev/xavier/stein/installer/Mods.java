@@ -30,11 +30,14 @@ import java.util.zip.ZipFile;
 /**
  * The mods, downloaded and updated by the installer.
  *
- * <p>The installer reads the official list from {@code stein.json}: its {@code sources} are the
- * indexes each official mod publishes with every release ({@code steinmods.json}, always at {@code
- * releases/latest/download}), and it puts each chosen mod in the mods folder, already at its latest
- * version. A new mod or version shows up for everyone without a new installer. A mod that leaves
- * the official list is simply no longer on it, so a copy already in the folder stays as it is.
+ * <p>The installer reads the official list from {@code stein.json} of the Stein registry ({@link
+ * Registry}, signed): its {@code sources} are the official mods' indexes, which each mod's release
+ * writes to the registry ({@code mods/<id>.json}), and it puts each chosen mod in the mods folder,
+ * already at its latest version. When the registry cannot be used it falls back to the {@code
+ * stein.json} of the installer's latest release, whose sources are each mod's own {@code
+ * steinmods.json}. A new mod or version shows up for everyone without a new installer. A mod that
+ * leaves the official list is simply no longer on it, so a copy already in the folder stays as it
+ * is.
  *
  * <p>Three rules that matter more than convenience:
  *
@@ -127,12 +130,12 @@ final class Mods {
                     && "1.8".equals(System.getProperty("java.specification.version"))) {
                 System.setProperty("https.protocols", "TLSv1.2");
             }
-            Map<String, Object> root = fetchJson(Urls.INDEX);
+            Map<String, Object> root = publishedIndex();
             Object sources = root.get("sources");
             if (sources instanceof List && !((List<?>) sources).isEmpty()) {
                 for (Object s : (List<?>) sources) {
                     String url = String.valueOf(s);
-                    if (!url.startsWith("https://")) {
+                    if (!url.startsWith("https://") && !Registry.isRegistry(url)) {
                         continue;
                     }
                     try {
@@ -151,8 +154,26 @@ final class Mods {
         return out;
     }
 
+    /**
+     * stein.json: the registry's, signed; the installer release's when the registry does not answer
+     * or its signature cannot be checked; or the {@code steinloader.index} one, as is.
+     */
+    private static Map<String, Object> publishedIndex() throws IOException {
+        if (Urls.INDEX_OVERRIDE != null) {
+            return fetchJson(Urls.INDEX_OVERRIDE);
+        }
+        try {
+            return fetchJson(Urls.INDEX);
+        } catch (IOException | RuntimeException e) {
+            System.err.println("Stein registry unavailable, using the release's list (" + e + ")");
+            return fetchJson(Urls.INDEX_BRIDGE);
+        }
+    }
+
+    /** A JSON object from the address; a registry file only with a valid signature. */
     private static Map<String, Object> fetchJson(String url) throws IOException {
-        return Json.object(Json.parse(new String(download(url, null), StandardCharsets.UTF_8)));
+        byte[] body = Registry.isRegistry(url) ? Registry.fetchSigned(url) : download(url, null);
+        return Json.object(Json.parse(new String(body, StandardCharsets.UTF_8)));
     }
 
     /** The valid entries of a {@code mods} list, skipping a mod already on the list. */
