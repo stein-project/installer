@@ -38,9 +38,9 @@ The installer's release is the pack players download. Write `changelog/<version>
 [loader](https://github.com/Stein-Project/loader) repository, then push a `v<Install.VERSION>` tag here
 (`v<version>-rc.1` for a test version, seen only by the test channel). `.github/workflows/release.yml` builds the
 installer with the Bridge and the Loader and publishes it as a release of this repository: the installer, the runtimes,
-`SHA256SUMS.txt` and `stein.json`, and writes `latest` into `stein.json` of the
-[Stein registry](https://github.com/Stein-Project/registry) (the `REGISTRY_TOKEN` secret: Contents: write on the
-registry). Running it by hand is a dry run that publishes nothing.
+`SHA256SUMS.txt` and `stein.json`. Running it by hand is a dry run that publishes nothing. After a release, run the
+`publish` workflow of the [Stein registry](https://github.com/Stein-Project/registry) by hand: it reads the releases
+and puts `latest` into the registry's `stein.json`.
 
 The Discord invite, the message on the Loader's menu (`news`) and the official mods (`sources`) are edited in
 `stein.json` of the registry, which signs it; the Stein Client, the installer and the Loader read it there
