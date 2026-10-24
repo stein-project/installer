@@ -166,7 +166,7 @@ public final class Install {
 
     static final String LWJGL = "3.4.3";
     static final String[] LWJGL_MODULES = {
-        "lwjgl", "lwjgl-glfw", "lwjgl-opengl", "lwjgl-openal", "lwjgl-stb"
+        "lwjgl", "lwjgl-glfw", "lwjgl-opengl", "lwjgl-openal", "lwjgl-stb", "lwjgl-vulkan"
     };
     static final String PAULSCODE =
             "com/paulscode/librarylwjglopenal/20100824/librarylwjglopenal-20100824.jar";
@@ -688,13 +688,16 @@ public final class Install {
             // the
             // launcher reads it before building the classpath.
             String cls = "natives-" + SYSTEM;
+            Path nativesJar =
+                    payload.resolve("lwjgl").resolve(mod + "-" + LWJGL + "-" + cls + ".jar");
+            if (mod.equals("lwjgl-vulkan") && !Files.isRegularFile(nativesJar)) {
+                // LWJGL's Vulkan has natives only for macOS (MoltenVK): elsewhere the loader comes
+                // with the graphics driver
+                continue;
+            }
             String natives = "dev.xavier.stein.lwjgl:" + mod + "-" + cls + ":" + LWJGL;
             Map<String, Object> n =
-                    copyLib(
-                            natives,
-                            payload.resolve("lwjgl")
-                                    .resolve(mod + "-" + LWJGL + "-" + cls + ".jar"),
-                            Urls.MAVEN + mavenPath(coord + ":" + cls));
+                    copyLib(natives, nativesJar, Urls.MAVEN + mavenPath(coord + ":" + cls));
             n.put("rules", Arrays.asList(map("action", "allow", "os", map("name", LAUNCHER_OS))));
             libraries.add(n);
         }
