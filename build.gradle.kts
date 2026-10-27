@@ -113,9 +113,10 @@ val host = when {
     os.isMacOsX -> if (System.getProperty("os.arch") == "aarch64") "macos-arm64" else "macos"
     else -> "linux"
 }
-// The modules of Java SE plus what the game and LWJGL use (Unsafe, pt_BR number formats, TLS over elliptic curves).
+// The modules of Java SE plus what the game and LWJGL use (Unsafe, pt_BR number formats, TLS over elliptic curves)
+// and the flight recorder (the benchmark puts a recording in its report).
 // The Windows certificate store (jdk.crypto.mscapi) only exists there: asking for it elsewhere breaks jlink.
-val modules = "java.se,jdk.unsupported,jdk.crypto.ec,jdk.localedata,jdk.charsets,jdk.zipfs,jdk.management," +
+val modules = "java.se,jdk.unsupported,jdk.crypto.ec,jdk.localedata,jdk.charsets,jdk.zipfs,jdk.management,jdk.jfr," +
     "jdk.accessibility,jdk.naming.dns,jdk.net"
 
 /** File operations for task actions: Task.project is not available while a task runs. */
