@@ -59,15 +59,15 @@ import java.util.Set;
 public final class Install {
 
     /** Installer and installed package version (manifest, window, zip). */
-    public static final String VERSION = "0.1.36";
+    public static final String VERSION = "0.1.37";
 
     /**
      * Library versions: those of SteinBridge.VERSION and Loader.VERSION (the build,
      * build.gradle.kts, checks).
      */
-    public static final String BRIDGE_VERSION = "0.1.22";
+    public static final String BRIDGE_VERSION = "0.1.23";
 
-    public static final String LOADER_VERSION = "0.1.28";
+    public static final String LOADER_VERSION = "0.1.29";
 
     /** Folder and version id in the launcher, in LiteLoader style (1.8.9-LiteLoader1.8.9). */
     public static final String VERSION_ID = "1.8.9-SteinLoader";
