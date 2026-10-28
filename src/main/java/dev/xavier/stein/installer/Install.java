@@ -84,10 +84,8 @@ public final class Install {
     /** Marker left by whoever copied the Java into the version, to know when to replace it. */
     static final String RUNTIME_MARK = "stein-runtime.txt";
 
-    /**
-     * Game memory beyond the cap: starts small and ZGC aims for 768 MB (why: see writeProfiles).
-     */
-    static final String HEAP_POLICY = "-Xms256M -XX:SoftMaxHeapSize=768M";
+    /** Game memory beyond the cap: starts small and ZGC aims for 1 GB (why: see writeProfiles). */
+    static final String HEAP_POLICY = "-Xms256M -XX:SoftMaxHeapSize=1024M";
 
     /**
      * This machine's system, named the way LWJGL names native jars: {@code windows}, {@code linux},
@@ -832,13 +830,13 @@ public final class Install {
             // players around, three runs each: worst frame 27 ms -> 18 ms, 0.1% low 54 -> 60 fps,
             // and every run matched the others. ZGC still collects when memory demands it; it just
             // does not collect on its own initiative when memory is plentiful.
-            // The memory chosen is the cap (-Xmx), not the reservation: -Xms256M and a 768 MB
-            // target
+            // The memory chosen is the cap (-Xmx), not the reservation: -Xms256M and a 1 GB target
             // (SoftMaxHeapSize) that ZGC tries to keep, going past it only when the game needs to.
             // With -Xms equal to -Xmx the game took all the memory up front and ZGC only collected
-            // when it was full: 3.5 GB in Task Manager for ~290 MB live (400-player crowd). With
-            // the
-            // target: 1.3-1.6 GB, fps and 1% low equal or better (crowd and terrain-walk scenes).
+            // when it was full: 3.5 GB in Task Manager for ~290 MB live (400-player crowd).
+            // A 768 MB target sat right above what the game uses (~680 MB in the benchmark's
+            // fights), so ZGC ran hundreds of cycles per scene, over a core of its own: 1 GB leaves
+            // it room for 9-50 cycles, 1% low +12..50%, worst frame lower, for ~180 MB more heap.
             p.put(
                     "javaArgs",
                     "-Xmx"
