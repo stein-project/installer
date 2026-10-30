@@ -59,7 +59,7 @@ import java.util.Set;
 public final class Install {
 
     /** Installer and installed package version (manifest, window, zip). */
-    public static final String VERSION = "0.1.41";
+    public static final String VERSION = "0.1.42";
 
     /**
      * Library versions: those of SteinBridge.VERSION and Loader.VERSION (the build,
@@ -67,7 +67,7 @@ public final class Install {
      */
     public static final String BRIDGE_VERSION = "0.1.27";
 
-    public static final String LOADER_VERSION = "0.1.30";
+    public static final String LOADER_VERSION = "0.1.31";
 
     /** Folder and version id in the launcher, in LiteLoader style (1.8.9-LiteLoader1.8.9). */
     public static final String VERSION_ID = "1.8.9-SteinLoader";
