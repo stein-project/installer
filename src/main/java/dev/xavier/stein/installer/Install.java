@@ -59,13 +59,13 @@ import java.util.Set;
 public final class Install {
 
     /** Installer and installed package version (manifest, window, zip). */
-    public static final String VERSION = "0.1.40";
+    public static final String VERSION = "0.1.41";
 
     /**
      * Library versions: those of SteinBridge.VERSION and Loader.VERSION (the build,
      * build.gradle.kts, checks).
      */
-    public static final String BRIDGE_VERSION = "0.1.26";
+    public static final String BRIDGE_VERSION = "0.1.27";
 
     public static final String LOADER_VERSION = "0.1.30";
 
