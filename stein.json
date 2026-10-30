@@ -21,7 +21,6 @@
   "sources": [
     "https://github.com/Stein-Project/hud/releases/latest/download/steinmods.json",
     "https://github.com/Stein-Project/connect/releases/latest/download/steinmods.json",
-    "https://github.com/Stein-Project/keybind/releases/latest/download/steinmods.json",
     "https://github.com/Stein-Project/replay/releases/latest/download/steinmods.json"
   ]
 }
