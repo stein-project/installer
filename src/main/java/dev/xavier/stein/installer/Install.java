@@ -213,6 +213,14 @@ public final class Install {
     private final Path libs;
 
     public Install(Path mc, Path payload, Options opt, Messages m, Log log) {
+        this(mc, null, payload, opt, m, log);
+    }
+
+    /**
+     * With the Java 25 in another folder: {@link PrismInstall} uses this one only for {@link
+     * #copyRuntime} and {@link #patch}, with the runtime inside its instance.
+     */
+    Install(Path mc, Path runtime, Path payload, Options opt, Messages m, Log log) {
         this.mc = mc.toAbsolutePath().normalize();
         this.payload = payload;
         this.opt = opt;
@@ -220,8 +228,29 @@ public final class Install {
         this.log = log;
         versionDir = this.mc.resolve("versions").resolve(VERSION_ID);
         // The Java 25 lives with the version (it goes away together with it on uninstall).
-        runtimeDir = versionDir.resolve("runtime");
+        runtimeDir =
+                runtime != null
+                        ? runtime.toAbsolutePath().normalize()
+                        : versionDir.resolve("runtime");
         libs = this.mc.resolve("libraries");
+    }
+
+    /** The rules that patch the player's 1.8.9.jar (the Patcher, {@link #patch}). */
+    static final String[] GAME_RULES = {
+        "name-mapping.txt",
+        "redirects-mc.tsv",
+        "redirects-opt.tsv",
+        "redirects-batch.tsv",
+        "redirects-mods.tsv"
+    };
+
+    /** The paulscode library patched for LWJGL 3 (its own coordinate: it replaces Mojang's). */
+    static final String PAULSCODE_STEIN =
+            "dev.xavier.stein:librarylwjglopenal-steinbridge:20100824";
+
+    /** The Java 25 folder in use. */
+    Path runtimeDir() {
+        return runtimeDir;
     }
 
     /**
@@ -292,13 +321,8 @@ public final class Install {
         patch(
                 mc.resolve("versions/1.8.9/1.8.9.jar"),
                 versionDir.resolve(VERSION_ID + ".jar"),
-                "name-mapping.txt",
-                "redirects-mc.tsv",
-                "redirects-opt.tsv",
-                "redirects-batch.tsv",
-                "redirects-mods.tsv");
-        Path paul =
-                libs.resolve(mavenPath("dev.xavier.stein:librarylwjglopenal-steinbridge:20100824"));
+                GAME_RULES);
+        Path paul = libs.resolve(mavenPath(PAULSCODE_STEIN));
         Files.createDirectories(paul.getParent());
         patch(libs.resolve(PAULSCODE), paul, "redirects-al.tsv");
         log.progress(4, total);
@@ -381,7 +405,7 @@ public final class Install {
      * is the single file ({@link Bundle}); in the jpackage app, it is the Java running the
      * installer.
      */
-    private void copyRuntime() throws IOException, InstallException {
+    void copyRuntime() throws IOException, InstallException {
         Path jar = Bundle.self();
         if (isRuntimeCurrent()) {
             log.line(m.t("javaOk"));
@@ -599,7 +623,7 @@ public final class Install {
     }
 
     /** The Patcher runs in its own process (static state, and it exits with an error code). */
-    private void patch(Path in, Path out, String... rules) throws Exception {
+    void patch(Path in, Path out, String... rules) throws Exception {
         List<String> cmd =
                 new ArrayList<>(
                         Arrays.asList(

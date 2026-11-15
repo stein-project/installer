@@ -180,7 +180,7 @@ public final class InstallerApp {
      * deep.
      */
     static List<Path> findMinecrafts() {
-        Set<Path> found = new LinkedHashSet<>();
+        Set<Path> found = new LinkedHashSet<>(PrismInstall.find());
         Path def = defaultMinecraft().toAbsolutePath().normalize();
         if (has189(def)) {
             found.add(def);
@@ -253,7 +253,7 @@ public final class InstallerApp {
      */
     static Path resolveMinecraft(Path p) {
         Path abs = p.toAbsolutePath().normalize();
-        if (has189(abs) || !Files.isDirectory(abs)) {
+        if (has189(abs) || PrismInstall.isPrism(abs) || !Files.isDirectory(abs)) {
             return abs;
         }
         try (Stream<Path> s =
@@ -299,6 +299,12 @@ public final class InstallerApp {
         for (String c : processPaths()) {
             String exe = c.toLowerCase(java.util.Locale.ROOT);
             if (exe.endsWith("minecraftlauncher.exe")) {
+                return true;
+            }
+            // Prism keeps its instances in memory and writes their instance.cfg back over the
+            // installer's when it saves: open while installing, it should be restarted after.
+            if (PrismInstall.isPrism(mc)
+                    && (exe.endsWith("prismlauncher.exe") || exe.endsWith("/prismlauncher"))) {
                 return true;
             }
             try {
@@ -439,7 +445,27 @@ public final class InstallerApp {
 
     /** The mods already in the folder: the default is to update those, adding no others. */
     private static java.util.Set<String> installedModIds(Path mc) {
-        return new java.util.LinkedHashSet<>(Mods.installedMods(mc.resolve("mods")).keySet());
+        return new java.util.LinkedHashSet<>(Mods.installedMods(modsDir(mc)).keySet());
+    }
+
+    /** The mods folder of a .minecraft, or of the Stein instance in a Prism folder. */
+    static Path modsDir(Path target) {
+        return PrismInstall.isPrism(target)
+                ? PrismInstall.instances(target)
+                        .resolve(PrismInstall.INSTANCE_DIR)
+                        .resolve("minecraft")
+                        .resolve("mods")
+                : target.resolve("mods");
+    }
+
+    /** The launcher a folder belongs to, for the lists: Prism Launcher, or the profiles' one. */
+    static String launcherOf(Path p, Messages m) {
+        return PrismInstall.isPrism(p) ? m.t("prismLauncher") : Install.launcherName(p);
+    }
+
+    /** The install already in the folder (a .minecraft or a Prism folder), or null. */
+    static Map<String, Object> installedIn(Path p) {
+        return PrismInstall.isPrism(p) ? PrismInstall.installed(p) : Install.installed(p);
     }
 
     private static int cli(String[] args) {
@@ -480,18 +506,27 @@ public final class InstallerApp {
         }
         if (list) {
             for (Path p : findMinecrafts()) {
-                String launcher = Install.launcherName(p);
+                String launcher = launcherOf(p, m);
                 System.out.println(p + (launcher != null ? "  (" + launcher + ")" : ""));
             }
             return 0;
         }
         if (launcherRunning(mc)) {
-            System.out.println(m.t("launcherOpen"));
+            System.out.println(m.t(PrismInstall.isPrism(mc) ? "prismOpen" : "launcherOpen"));
         }
         if (o.mods == null && !uninstall) {
             o.mods = installedModIds(mc); // without --mods: update what is already there
         }
         try {
+            if (PrismInstall.isPrism(mc)) {
+                PrismInstall pi = new PrismInstall(mc, payload(m), o, m, System.out::println);
+                if (uninstall) {
+                    pi.uninstall();
+                } else {
+                    pi.install();
+                }
+                return 0;
+            }
             Install in = new Install(mc, payload(m), o, m, System.out::println);
             if (uninstall) {
                 in.uninstall();
@@ -618,7 +653,7 @@ public final class InstallerApp {
                     refresh(true);
                     Path f = folder();
                     if (f != null && launcherRunning(f)) {
-                        append(m.t("launcherOpen"));
+                        append(m.t(PrismInstall.isPrism(f) ? "prismOpen" : "launcherOpen"));
                     }
                 });
         p.add(next, c);
@@ -779,7 +814,7 @@ public final class InstallerApp {
             protected List<Path> doInBackground() {
                 List<Path> found = findMinecrafts();
                 for (Path p : found) {
-                    String launcher = Install.launcherName(p);
+                    String launcher = launcherOf(p, m);
                     if (launcher != null) {
                         launchers.put(p.toString(), launcher);
                     }
@@ -827,7 +862,7 @@ public final class InstallerApp {
             return;
         }
         Path mc = folder();
-        existing = mc == null ? null : Install.installed(mc);
+        existing = mc == null ? null : installedIn(mc);
         boolean installed = existing != null;
         primary.setText(m.t(installed ? "updateButton" : "install"));
         uninstallButton.setVisible(installed);
@@ -895,6 +930,9 @@ public final class InstallerApp {
         if (mc == null) {
             return;
         }
+        if (PrismInstall.isPrism(mc)) {
+            mc = modsDir(mc).getParent(); // the Stein instance's game folder
+        }
         try {
             Desktop.getDesktop().open(mc.toFile());
         } catch (Exception e) {
@@ -925,7 +963,8 @@ public final class InstallerApp {
                 }
             }
         }
-        boolean update = !uninstall && Install.installed(mc) != null;
+        boolean update = !uninstall && installedIn(mc) != null;
+        boolean prism = PrismInstall.isPrism(mc);
         append("== " + java.time.LocalDateTime.now().withNano(0) + "  " + mc);
         running = true;
         setInputsEnabled(false);
@@ -937,23 +976,28 @@ public final class InstallerApp {
             @Override
             protected Void doInBackground() {
                 try {
-                    Install in =
-                            new Install(
-                                    mc,
-                                    payload(m),
-                                    o,
-                                    m,
-                                    new Install.Log() {
-                                        @Override
-                                        public void line(String s) {
-                                            publish(s);
-                                        }
+                    Install.Log log =
+                            new Install.Log() {
+                                @Override
+                                public void line(String s) {
+                                    publish(s);
+                                }
 
-                                        @Override
-                                        public void progress(int done, int total) {
-                                            SwingUtilities.invokeLater(() -> bar.setValue(done));
-                                        }
-                                    });
+                                @Override
+                                public void progress(int done, int total) {
+                                    SwingUtilities.invokeLater(() -> bar.setValue(done));
+                                }
+                            };
+                    if (prism) {
+                        PrismInstall pi = new PrismInstall(mc, payload(m), o, m, log);
+                        if (uninstall) {
+                            pi.uninstall();
+                        } else {
+                            pi.install();
+                        }
+                        return null;
+                    }
+                    Install in = new Install(mc, payload(m), o, m, log);
                     if (uninstall) {
                         in.uninstall();
                     } else {
@@ -989,7 +1033,13 @@ public final class InstallerApp {
                                 + "\n"
                                 + m.t("inFolder", mc);
                 setStatus(
-                        uninstall ? title : title + "\n" + m.t("nextStep", Install.PROFILE_NAME),
+                        uninstall
+                                ? title
+                                : title
+                                        + "\n"
+                                        + (prism
+                                                ? m.t("prismNext", PrismInstall.INSTANCE_NAME)
+                                                : m.t("nextStep", Install.PROFILE_NAME)),
                         OK,
                         true);
                 actionCards.show(actions, "done");

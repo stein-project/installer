@@ -337,6 +337,56 @@ public final class Messages {
                 "In the launcher, choose the profile \"%s\" and click Play.",
                 "En el launcher, elige el perfil \"%s\" y haz clic en Jugar.",
                 "No launcher, escolha o perfil \"%s\" e clique em Jogar.");
+        // Prism Launcher (PrismInstall.java).
+        put("prismLauncher", "Prism Launcher", "Prism Launcher", "Prism Launcher");
+        put(
+                "prismOpen",
+                "Prism Launcher is open. Close it before installing: when it saves, it may undo the"
+                        + " new instance's settings.",
+                "Prism Launcher está abierto. Ciérralo antes de instalar: al guardar, puede deshacer"
+                        + " los ajustes de la instancia nueva.",
+                "O Prism Launcher está aberto. Feche antes de instalar: quando ele salva, pode desfazer"
+                        + " os ajustes da instância nova.");
+        put(
+                "prismInstance",
+                "Prism instance \"%s\"",
+                "Instancia de Prism \"%s\"",
+                "Instância do Prism \"%s\"");
+        put(
+                "prismDone",
+                "Done. In Prism Launcher, play the instance \"%s\".",
+                "Listo. En Prism Launcher, juega la instancia \"%s\".",
+                "Pronto. No Prism Launcher, jogue a instância \"%s\".");
+        put(
+                "prismNext",
+                "In Prism Launcher, play the instance \"%s\" (restart Prism if it was open).",
+                "En Prism Launcher, juega la instancia \"%s\" (reinicia Prism si estaba abierto).",
+                "No Prism Launcher, jogue a instância \"%s\" (reabra o Prism se ele estava aberto).");
+        put(
+                "prismUninstall",
+                "To remove it, delete the instance \"%s\" in Prism Launcher (right click, Delete). Its"
+                        + " worlds and options go with it.",
+                "Para quitarlo, borra la instancia \"%s\" en Prism Launcher (clic derecho, Borrar)."
+                        + " Sus mundos y opciones se van con ella.",
+                "Para remover, apague a instância \"%s\" no Prism Launcher (botão direito, Excluir)."
+                        + " Os mundos e as opções dela vão junto.");
+        put(
+                "prismNoVanilla",
+                "Could not get Minecraft 1.8.9 from Mojang (%s). Check your internet and try again.",
+                "No se pudo obtener Minecraft 1.8.9 de Mojang (%s). Revisa tu internet e inténtalo"
+                        + " de nuevo.",
+                "Não deu para baixar o Minecraft 1.8.9 da Mojang (%s). Confira a internet e tente de"
+                        + " novo.");
+        put(
+                "prismOffline",
+                "No internet: using the Minecraft 1.8.9 already downloaded.",
+                "Sin internet: se usa el Minecraft 1.8.9 ya descargado.",
+                "Sem internet: usando o Minecraft 1.8.9 já baixado.");
+        put(
+                "prismBadFile",
+                "The file downloaded from %s does not match. Try again.",
+                "El archivo descargado de %s no coincide. Inténtalo de nuevo.",
+                "O arquivo baixado de %s não confere. Tente de novo.");
         put("error", "Error: %s", "Error: %s", "Erro: %s");
         put("cliUnknown", "unknown option: %s", "opción desconocida: %s", "opção desconhecida: %s");
     }
